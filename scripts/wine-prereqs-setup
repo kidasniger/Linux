@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Sans sudo. Usage : wine-prereqs-setup [autre-lanceur.exe]
+set -u
+export WINEDEBUG=-all W_CACHE=/opt/wine-prereqs/cache
+P64="${WINEPREFIX:-$HOME/.wine-jeux}"        # 64-bit : jeux, Rockstar, VC++, DXVK
+P32="${PREFIX_NET32:-$HOME/.wine-dotnet32}"  # 32-bit : .NET 3.5/4.0/4.5/4.8
+FAIL=()
+inst() { # inst <prefix> <verbes...>
+  local p="$1"; shift
+  for v in "$@"; do
+    echo "== $v =="
+    WINEPREFIX="$p" winetricks -q "$v" || FAIL+=("$v")
+  done
+}
+echo "### Préfixe 64-bit : $P64"
+WINEARCH=win64 WINEPREFIX="$P64" wineboot -u
+inst "$P64" vcrun2005 vcrun2008 vcrun2010 vcrun2012 vcrun2013 vcrun2015 vcrun2017 vcrun2022 \
+            corefonts d3dcompiler_47 d3dx9 d3dx10 d3dx11_43 dxvk dotnet48
+echo "### Préfixe 32-bit .NET : $P32"
+WINEARCH=win32 WINEPREFIX="$P32" wineboot -u
+inst "$P32" dotnet35 dotnet40 dotnet45 dotnet48
+
+L="${1:-/opt/wine-prereqs/launchers/Rockstar-Games-Launcher.exe}"
+if [ -f "$L" ]; then echo "### Lancement : $L"; WINEPREFIX="$P64" wine "$L"; fi
+
+[ ${#FAIL[@]} -gt 0 ] && { echo "Échecs : ${FAIL[*]}"; exit 1; }
+echo "Terminé. Préfixe jeux : $P64"

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# À lancer avec sudo. Installe Wine, winetricks, Vulkan... depuis le dépôt local (aucun Internet).
+set -eu
+[ "$(id -u)" -eq 0 ] || { echo "Lance : sudo wine-prereqs-system"; exit 1; }
+REPO=/opt/wine-prereqs/apt
+[ -d "$REPO" ] || { echo "Dépôt local absent : installe d'abord wine-prereqs-apt_*.deb"; exit 1; }
+dpkg --add-architecture i386
+echo "deb [trusted=yes] file:$REPO ./" > /tmp/wine-prereqs-local.list
+OPTS=(-o Dir::Etc::sourcelist=/tmp/wine-prereqs-local.list -o Dir::Etc::sourceparts=- -o APT::Get::List-Cleanup=0)
+apt-get "${OPTS[@]}" update
+apt-get "${OPTS[@]}" install -y --no-install-recommends \
+  wine wine32 wine64 winetricks cabextract p7zip-full unzip \
+  libvulkan1 libvulkan1:i386 vulkan-tools mesa-vulkan-drivers mesa-vulkan-drivers:i386 fonts-wine
+rm -f /tmp/wine-prereqs-local.list
+echo "OK. Pour NVIDIA, installe aussi ton pilote propriétaire (Gestionnaire de pilotes Deepin)."
+echo "Maintenant (SANS sudo) : wine-prereqs-setup"

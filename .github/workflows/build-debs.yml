@@ -1,0 +1,45 @@
+name: Build wine-prereqs offline debs
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    # Debian 12 = base de Deepin 23 -> paquets compatibles
+    container:
+      image: debian:12
+      options: --privileged
+    steps:
+      - name: Outils de base
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git curl wget
+
+      - uses: actions/checkout@v4
+
+      - name: Construire tous les .deb
+        run: |
+          chmod +x scripts/*.sh build-debs.sh
+          ./build-debs.sh
+
+      - name: Contenu produit
+        run: ls -lh out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wine-prereqs-offline
+          path: out/*
+          compression-level: 0
+
+      - name: Publier dans les Releases (si tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          generate_release_notes: true
