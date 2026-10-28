@@ -8,6 +8,9 @@ rm -rf "$OUT" "$WORK"; mkdir -p "$OUT" "$WORK"
 export DEBIAN_FRONTEND=noninteractive WINEDEBUG=-all
 
 echo "##[group]1/6 Dépôts apt + Wine"
+rm -f /etc/apt/apt.conf.d/docker-clean
+echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/99keep
+echo 'APT::Keep-Downloaded-Packages "true";' >> /etc/apt/apt.conf.d/99keep
 dpkg --add-architecture i386
 sed -i 's/^Components: main$/Components: main contrib non-free non-free-firmware/' /etc/apt/sources.list.d/debian.sources 2>/dev/null || true
 apt-get update
@@ -17,6 +20,7 @@ APT_PKGS="wine wine32 wine64 libwine libwine:i386 winetricks cabextract p7zip-fu
 # on télécharge d'abord (bundle hors ligne), puis on installe pour pouvoir remplir les caches
 apt-get install -y --download-only --no-install-recommends $APT_PKGS
 apt-get install -y --no-install-recommends $APT_PKGS
+N=$(ls /var/cache/apt/archives/*.deb 2>/dev/null | wc -l); echo "$N .deb en cache"; [ "$N" -gt 0 ] || { echo "ERREUR: aucun .deb en cache"; exit 1; }
 echo "##[endgroup]"
 
 echo "##[group]2/6 Bundle apt (Wine + Vulkan + deps, dépôt local)"
