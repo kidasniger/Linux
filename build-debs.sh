@@ -63,7 +63,7 @@ for g in dotnet graphics; do
   for prev in vcrun dotnet graphics; do
     [ "$prev" = "$g" ] && break
     (cd "$WORK/cache-$g" && find . -type f | while read -r f; do
-       [ -e "$WORK/cache-$prev/$f" ] && rm -f "$f"; done)
+       if [ -e "$WORK/cache-$prev/$f" ]; then rm -f "$f"; fi; done)
   done
 done
 
